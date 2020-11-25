@@ -89,12 +89,12 @@ void dooropened()
 {
     LogDebug("DoorOpenedCalled");
 
-    sendEvent(name:"contact", value: "open", isStateChange: false, descriptionText: "Door Opened");
+    sendEvent(name:"contact", value: "open", isStateChange: true, descriptionText: "Door Opened");
 }
 
 void doorclosed()
 {
     LogDebug("DoorClosedCalled");
 
-    sendEvent(name:"contact", value: "closed", isStateChange: false, descriptionText: "Door Closed");
+    sendEvent(name:"contact", value: "closed", isStateChange: true, descriptionText: "Door Closed");
 }
