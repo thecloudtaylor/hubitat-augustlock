@@ -10,7 +10,8 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-11-25-2020 :  Initial 
+11-25-2020 :  Initial
+11-28-2020 :  0.0.1 Alpha 
 
 Considerable inspiration and examples thanks to: https://github.com/snjoetw/py-august
 */
@@ -164,6 +165,11 @@ def initialize()
 {
     LogInfo("Initializing August Home.");
     unschedule()
+    refreshToken()
+    refreshLocks()
+    runEvery15Minutes(refreshLocks)
+    runEvery3Hours(refreshToken)
+
 }
 
 def updated() 
@@ -370,8 +376,6 @@ def refreshToken()
 {
     LogDebug("refreshToken()");
 
-
-
     def uri = global_apiURL + '/users/houses/mine'
     def body = []
 
@@ -542,7 +546,7 @@ def getLockStatus(com.hubitat.app.DeviceWrapper device)
 
     def doorState = reJson.doorState
     LogDebug("getLockStatus-doorState: ${doorState}")
-    sendEvent(contact, [name: 'lock', value: doorState])
+    sendEvent(device, [name: 'contact', value: doorState])
 }
 
 def lockDoor(com.hubitat.app.DeviceWrapper device) 

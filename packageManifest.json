@@ -3,5 +3,25 @@
   "author": "Taylor Brown(@thecloudtaylor)",
   "version": "0.1.1",
   "minimumHEVersion": "2.2.4",
-  "dateReleased": "2020-11-28"
+  "dateReleased": "2020-11-28",
+  "drivers": [
+    {
+      "id": "f3be8fbc-03aa-40b7-b02e-317817fbbfcb",
+      "name": "August WiFI Lock",
+      "namespace": "thecloudtaylor",
+      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/main/augustlockdriver.groovy",
+      "required": true
+    }
+  ],
+  "apps": [
+    {
+      "id": "3b8f568d-b664-4d6f-94cd-ec319319ed1b",
+      "name": "August Home",
+      "namespace": "thecloudtaylor",
+      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/main/augusthomeapp.groovy",
+      "required": true,
+      "oauth": false,
+      "primary": false
+    }
+  ]
 }
