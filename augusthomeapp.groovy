@@ -40,7 +40,10 @@ definition(
 preferences 
 {
     page(name: "mainPage")
+    page(name: "loginPage", title: "Login Options", install: true)
     page(name: "debugPage", title: "Debug Options", install: true)
+
+
 }
 
 mappings {
@@ -54,7 +57,8 @@ mappings {
 def mainPage() {
     dynamicPage(name: "mainPage", title: "Setup connection to August Home and Discover devices", install: true, uninstall: true) {
 
-        //connectToAugust()
+        getLoginLink()
+        
         getDiscoverButton()
         
         section {
@@ -67,6 +71,17 @@ def mainPage() {
     }
 }
 
+def loginPage()
+{
+    dynamicPage(name:"loginPage", title: "Login Options", install: false, uninstall: false) {
+    section {
+        paragraph "August Login Options"
+    }
+    getLoginOptions()
+    getTwoFA()
+    }
+
+}
 
 def debugPage() {
     dynamicPage(name:"debugPage", title: "Debug", install: false, uninstall: false) {
@@ -80,10 +95,37 @@ def debugPage() {
             input 'deleteDevices', 'button', title: 'Delete all devices', submitOnChange: true
         }
         section {
-            input 'refreshDevices', 'button', title: 'Refresh all devices', submitOnChange: true
+            input 'refreshLocks', 'button', title: 'Refresh all locks', submitOnChange: true
         }
         section {
             input 'initialize', 'button', title: 'initialize', submitOnChange: true
+        }
+    }
+}
+
+def getLoginOptions() 
+{
+ section 
+    {
+        input name: "loginMethod", type: "enum", title: "Authentication Method", options: ["email", "phone"], required: true, defaultValue: "phone"
+        input name: "username", type: "text", title: "Username(email or phone i.e +1(123)456-7890", description: "August Username", required: true
+        input name: "password", type: "password", title: "Password", description: "August Password", required: true   
+        input 'login', 'button', title: 'Login', submitOnChange: true
+    }
+}
+
+def getTwoFA() 
+{
+ section 
+    {
+        if (state.twoFAneeded == false)
+        {
+
+        }
+        else
+        {
+            input name: "twoFAcode", type: "text", title: "Two factor auth code", description: "AuthCode", required: true
+            input 'verify', 'button', title: 'Verify', submitOnChange: true
         }
     }
 }
@@ -114,7 +156,7 @@ def LogError(logMessage)
 def installed()
 {
     LogInfo("Installing August Home.");
-    createAccessToken();
+    state.twoFAneeded = false;
     
 }
 
@@ -122,10 +164,6 @@ def initialize()
 {
     LogInfo("Initializing August Home.");
     unschedule()
-    //sessionRequest()
-    //sendVerificationCodeRequest()
-    sendVerificationCodeResponse()
-    //getLocks();
 }
 
 def updated() 
@@ -144,7 +182,7 @@ def uninstalled()
     }
 }
 
-def sessionRequest(loginMethod="email", def userName="***REMOVED***", def password='***REMOVED***') 
+def sessionRequest(loginMethod, userName, password) 
 {
     LogDebug("sessionRequest()");
 
@@ -172,7 +210,7 @@ def sessionRequest(loginMethod="email", def userName="***REMOVED***", def passwo
     ]
 
     def params = [ uri: uri, headers:headers, body: body]
-    LogDebug("connectToAugust-params ${params}")
+    LogDebug("sessionRequest-params ${params}")
 
     //bugbug: should be validating resoponse
     //bugbug: should be setting expire
@@ -201,11 +239,9 @@ def sessionRequest(loginMethod="email", def userName="***REMOVED***", def passwo
 
 }
 
-def sendVerificationCodeRequest(loginMethod="email", def userName="***REMOVED***") 
+def sendVerificationCodeRequest(loginMethod, userName) 
 {
     LogDebug("sendVerificationCodeRequest()");
-
-
 
     def uri =""
 
@@ -249,23 +285,22 @@ def sendVerificationCodeRequest(loginMethod="email", def userName="***REMOVED***
             response.getHeaders().each {
                 LogDebug("reHeader: ${it}")
             }
+            state.twoFAneeded = true;
             //[installId:66b5b48f-ec95-46f1-ac65-04e5a491cce8, applicationId:, userId:f9a97f3d-1516-4092-99dc-bd2956a8a34f, vInstallId:false, vPassword:true, vEmail:false, vPhone:false, hasInstallId:true, hasPassword:true, hasEmail:true, hasPhone:true, isLockedOut:false, captcha:, email:[], phone:[], expiresAt:2021-03-29T01:24:49.273Z, temporaryAccountCreationPasswordLink:, iat:1606613089, exp:1616981089, LastName:Brown, FirstName:Taylor]
         
         }
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
-        LogError("connectToAugust failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        LogError("sendVerificationCodeRequest failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
 
 }
 
-def sendVerificationCodeResponse(loginMethod="email", def userName="***REMOVED***", def verifcationCode="526818") 
+def sendVerificationCodeResponse(loginMethod, userName, verifcationCode) 
 {
-    LogDebug("sendVerificationCodeRequest()");
-
-
+    LogDebug("sendVerificationCodeResponse()");
 
     def uri =""
     def body = []
@@ -303,11 +338,58 @@ def sendVerificationCodeResponse(loginMethod="email", def userName="***REMOVED**
     ]
 
     def params = [ uri: uri, headers:headers, body: body]
-    LogDebug("sendVerificationCodeRequest-params ${params}")
+    LogDebug("sendVerificationCodeResponse-params ${params}")
 
     try
     {
         httpPostJson(params) { response -> 
+    
+            def reCode = response.getStatus();
+            def reJson = response.getData();
+            LogDebug("reCode: ${reCode}")
+            LogDebug("reJson: ${reJson}")
+            response.getHeaders().each {
+                LogDebug("reHeader: ${it}")
+            }
+            state.access_token = response.getHeaders("x-august-access-token").value[0].toString()
+            LogDebug("AccessToken: ${state.access_token}")
+            //[installId:66b5b48f-ec95-46f1-ac65-04e5a491cce8, applicationId:, userId:f9a97f3d-1516-4092-99dc-bd2956a8a34f, vInstallId:false, vPassword:true, vEmail:false, vPhone:false, hasInstallId:true, hasPassword:true, hasEmail:true, hasPhone:true, isLockedOut:false, captcha:, email:[], phone:[], expiresAt:2021-03-29T01:24:49.273Z, temporaryAccountCreationPasswordLink:, iat:1606613089, exp:1616981089, LastName:Brown, FirstName:Taylor]
+            state.twoFAneeded = false;
+        }
+    }
+    catch (groovyx.net.http.HttpResponseException e) 
+    {
+        LogError("connectToAugust failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return false;
+    }
+
+}
+
+
+def refreshToken() 
+{
+    LogDebug("refreshToken()");
+
+
+
+    def uri = global_apiURL + '/users/houses/mine'
+    def body = []
+
+    def headers = [
+        "Accept-Version":global_HeaderAcceptVersion,
+        "x-august-api-key":global_HeaderApiKey,
+        "x-kease-api-key":global_HeaderApiKey,
+        "Content-Type":"application/json",
+        "User-Agent":global_HeaderUserAgent,
+        "x-august-access-token":state.access_token
+    ]
+
+    def params = [ uri: uri, headers:headers, body: body]
+    LogDebug("refreshToken-params ${params}")
+
+    try
+    {
+        httpGet(params) { response -> 
     
             def reCode = response.getStatus();
             def reJson = response.getData();
@@ -324,15 +406,15 @@ def sendVerificationCodeResponse(loginMethod="email", def userName="***REMOVED**
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
-        LogError("connectToAugust failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        LogError("refreshToken failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
 
 }
 
-def getLocks() 
+def discoverLocks() 
 {
-    LogDebug("getLocks()");
+    LogDebug("discoverLocks()");
 
     def uri = global_apiURL + '/users/locks/mine'
 
@@ -348,12 +430,13 @@ def getLocks()
     def params = [ uri: uri, headers:headers]
     LogDebug("getLocks-params ${params}")
 
+    def reJson =''
     try
     {
         httpGet(params) { response -> 
     
             def reCode = response.getStatus();
-            def reJson = response.getData();
+            reJson = response.getData();
             LogDebug("reCode: ${reCode}")
             LogDebug("reJson: ${reJson}")
             response.getHeaders().each {
@@ -366,8 +449,189 @@ def getLocks()
         LogError("connectToAugust failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
+    
+    reJson.each 
+    {
+        LogDebug("LockID: ${it.key}")
+        LogDebug("LockName: ${it.value['LockName']}")
+        LogDebug("macAddress: ${it.value['macAddress']}")
+        LogDebug("HouseID: ${it.value['HouseID']}")
+        LogDebug("HouseName: ${it.value['HouseName']}")
+        
+        try 
+        {
+            addChildDevice(
+                'thecloudtaylor',
+                'August WiFI Lock',
+                "${it.key}",
+                [
+                    name: "August WiFI Lock",
+                    label: "${it.value['HouseName']} - ${it.value['LockName']}"
+                ])
+        } 
+        catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
+        {
+            "${e.message} - you need to install the appropriate driver: ${device.type}"
+        } 
+        catch (IllegalArgumentException ignored) 
+        {
+            //Intentionally ignored.  Expected if device id already exists in HE.
+        }
+    }
 
 }
+
+def refreshLocks()
+{
+    LogDebug("refreshLocks()");
+
+    def children = getChildDevices()
+    children.each 
+    {
+        if (it != null) 
+        {
+            getLockStatus(it);
+        }
+    }
+}
+
+def getLockStatus(com.hubitat.app.DeviceWrapper device) 
+{
+    LogDebug("getLockStatus()");
+
+    def deviceID = device.getDeviceNetworkId();
+
+    def uri = global_apiURL + "/locks/${deviceID}/status"
+
+    def headers = [
+        "Accept-Version":global_HeaderAcceptVersion,
+        "x-august-api-key":global_HeaderApiKey,
+        "x-kease-api-key":global_HeaderApiKey,
+        "Content-Type":"application/json",
+        "User-Agent":global_HeaderUserAgent,
+        "x-august-access-token":state.access_token
+    ]
+
+    def params = [ uri: uri, headers:headers]
+    LogDebug("getLockStatus-params ${params}")
+
+    def reJson =''
+    try
+    {
+        httpGet(params) { response -> 
+    
+            def reCode = response.getStatus();
+            reJson = response.getData();
+            LogDebug("reCode: ${reCode}")
+            LogDebug("reJson: ${reJson}")
+            response.getHeaders().each {
+                LogDebug("reHeader: ${it}")
+            }
+        }
+    }
+    catch (groovyx.net.http.HttpResponseException e) 
+    {
+        LogError("getLockStatus failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return false;
+    }
+
+
+    def lockStatus = reJson.status
+    LogDebug("getLockStatus-status: ${lockStatus}")
+    sendEvent(device, [name: 'lock', value: lockStatus])
+
+    def doorState = reJson.doorState
+    LogDebug("getLockStatus-doorState: ${doorState}")
+    sendEvent(contact, [name: 'lock', value: doorState])
+}
+
+def lockDoor(com.hubitat.app.DeviceWrapper device) 
+{
+    LogDebug("lockDoor()");
+
+    def deviceID = device.getDeviceNetworkId();
+
+    def uri = global_apiURL + "/remoteoperate/${deviceID}/lock"
+
+    def headers = [
+        "Accept-Version":global_HeaderAcceptVersion,
+        "x-august-api-key":global_HeaderApiKey,
+        "x-kease-api-key":global_HeaderApiKey,
+        "Content-Type":"application/json",
+        "User-Agent":global_HeaderUserAgent,
+        "x-august-access-token":state.access_token
+    ]
+
+    def params = [ uri: uri, headers:headers]
+    LogDebug("getLockStatus-params ${params}")
+
+    try
+    {
+        httpPut(params) { response -> 
+    
+            def reCode = response.getStatus();
+            def reJson = response.getData();
+            LogDebug("reCode: ${reCode}")
+            LogDebug("reJson: ${reJson}")
+            response.getHeaders().each {
+                LogDebug("reHeader: ${it}")
+            }
+            //[installId:66b5b48f-ec95-46f1-ac65-04e5a491cce8, applicationId:, userId:f9a97f3d-1516-4092-99dc-bd2956a8a34f, vInstallId:false, vPassword:true, vEmail:false, vPhone:false, hasInstallId:true, hasPassword:true, hasEmail:true, hasPhone:true, isLockedOut:false, captcha:, email:[], phone:[], expiresAt:2021-03-29T01:24:49.273Z, temporaryAccountCreationPasswordLink:, iat:1606613089, exp:1616981089, LastName:Brown, FirstName:Taylor]
+        
+        }
+    }
+    catch (groovyx.net.http.HttpResponseException e) 
+    {
+        LogError("lockDoor failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return false;
+    }
+    getLockStatus(device)
+}
+
+def unlockDoor(com.hubitat.app.DeviceWrapper device) 
+{
+    LogDebug("unlockDoor()");
+
+    def deviceID = device.getDeviceNetworkId();
+
+    def uri = global_apiURL + "/remoteoperate/${deviceID}/unlock"
+
+    def headers = [
+        "Accept-Version":global_HeaderAcceptVersion,
+        "x-august-api-key":global_HeaderApiKey,
+        "x-kease-api-key":global_HeaderApiKey,
+        "Content-Type":"application/json",
+        "User-Agent":global_HeaderUserAgent,
+        "x-august-access-token":state.access_token
+    ]
+
+    def params = [ uri: uri, headers:headers]
+    LogDebug("getLockStatus-params ${params}")
+
+    try
+    {
+        httpPut(params) { response -> 
+    
+            def reCode = response.getStatus();
+            def reJson = response.getData();
+            LogDebug("reCode: ${reCode}")
+            LogDebug("reJson: ${reJson}")
+            response.getHeaders().each {
+                LogDebug("reHeader: ${it}")
+            }
+            //[installId:66b5b48f-ec95-46f1-ac65-04e5a491cce8, applicationId:, userId:f9a97f3d-1516-4092-99dc-bd2956a8a34f, vInstallId:false, vPassword:true, vEmail:false, vPhone:false, hasInstallId:true, hasPassword:true, hasEmail:true, hasPhone:true, isLockedOut:false, captcha:, email:[], phone:[], expiresAt:2021-03-29T01:24:49.273Z, temporaryAccountCreationPasswordLink:, iat:1606613089, exp:1616981089, LastName:Brown, FirstName:Taylor]
+        
+        }
+    }
+    catch (groovyx.net.http.HttpResponseException e) 
+    {
+        LogError("unlockDoor failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return false;
+    }
+    getLockStatus(device)
+}
+
+
 def getDiscoverButton() 
 {
     if (state.access_token == null) 
@@ -383,6 +647,17 @@ def getDiscoverButton()
         {
             input 'discoverDevices', 'button', title: 'Discover', submitOnChange: true
         }
+    }
+}
+
+def getLoginLink() {
+    section{
+        href(
+            name       : 'loginHref',
+            title      : 'Login Options',
+            page       : 'loginPage',
+            description: 'Access Login Options'
+        )
     }
 }
 
@@ -414,10 +689,19 @@ def listDiscoveredDevices() {
     }
 }
 
-
+    //
+    
+    
 
 def appButtonHandler(btn) {
     switch (btn) {
+    case 'login':
+        sessionRequest(settings.loginMethod, settings.username, settings.password)
+        sendVerificationCodeRequest(settings.loginMethod, settings.username)
+        break
+    case 'verify':
+        sendVerificationCodeResponse(settings.loginMethod, settings.username, settings.twoFAcode)
+        break
     case 'discoverDevices':
         discoverDevices()
         break
@@ -427,8 +711,8 @@ def appButtonHandler(btn) {
     case 'deleteDevices':
         deleteDevices()
         break
-    case 'refreshDevices':
-        refreshAllThermostats()
+    case 'refreshLocks':
+        refreshLocks()
         break
     case 'initialize':
         initialize()
@@ -451,108 +735,5 @@ def discoverDevices()
 {
     LogDebug("discoverDevices()");
 
-    
+    discoverLocks()
 }
-
-
-
-def handleAuthRedirect() 
-{
-    LogDebug("handleAuthRedirect()");
-
-    def authCode = params.code
-
-    LogDebug("AuthCode: ${authCode}")
-    def authorization = ("${global_conusmerKey}:${global_consumerSecret}").bytes.encodeBase64().toString()
-
-    def headers = [
-                    Authorization: authorization,
-                    Accept: "application/json"
-                ]
-    def body = [
-                    grant_type:"authorization_code",
-                    code:authCode,
-                    redirect_uri:global_redirectURL
-    ]
-    def params = [uri: global_apiURL, path: "/oauth2/token", headers: headers, body: body]
-    
-    try 
-    {
-        httpPost(params) { response -> loginResponse(response) }
-    } 
-    catch (groovyx.net.http.HttpResponseException e) 
-    {
-        LogError("Login failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
-    }
-
-    def stringBuilder = new StringBuilder()
-    stringBuilder << "<!DOCTYPE html><html><head><title>Honeywell Connected to Hubitat</title></head>"
-    stringBuilder << "<body><p>Hubitate and Honeywell are now connected.</p>"
-    stringBuilder << "<p><a href=http://${location.hub.localIP}/installedapp/configure/${app.id}/mainPage>Click here</a> to return to the App main page.</p></body></html>"
-    
-    def html = stringBuilder.toString()
-
-    render contentType: "text/html", data: html, status: 200
-}
-
-def refreshToken()
-{
-    LogDebug("refreshToken()");
-
-    if (state.refresh_token != null)
-    {
-        def authorization = ("${global_conusmerKey}:${global_consumerSecret}").bytes.encodeBase64().toString()
-
-        def headers = [
-                        Authorization: authorization,
-                        Accept: "application/json"
-                    ]
-        def body = [
-                        grant_type:"refresh_token",
-                        refresh_token:state.refresh_token
-
-        ]
-        def params = [uri: global_apiURL, path: "/oauth2/token", headers: headers, body: body]
-        
-        try 
-        {
-            httpPost(params) { response -> loginResponse(response) }
-        } 
-        catch (groovyx.net.http.HttpResponseException e) 
-        {
-            LogError("Login failed -- ${e.getLocalizedMessage()}: ${e.response.data}")  
-        }
-    }
-    else
-    {
-        LogError("Failed to refresh token, refresh token null.")
-    }
-}
-
-def loginResponse(response) 
-{
-    LogDebug("loginResponse()");
-
-    def reCode = response.getStatus();
-    def reJson = response.getData();
-    LogDebug("reCode: {$reCode}")
-    LogDebug("reJson: {$reJson}")
-
-    if (reCode == 200)
-    {
-        state.access_token = reJson.access_token;
-        state.refresh_token = reJson.refresh_token;
-        
-        def runTime = new Date()
-        def expireTime = (Integer.parseInt(reJson.expires_in) - 100)
-        runTime.setSeconds(expireTime)
-        LogDebug("TokenRefresh Scheduled at: ${runTime}")
-        schedule(runTime, refreshToken)
-    }
-    else
-    {
-        LogError("LoginResponse Failed HTTP Request Status: ${reCode}");
-    }
-}
-
-

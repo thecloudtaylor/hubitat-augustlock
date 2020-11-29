@@ -73,16 +73,22 @@ void refresh()
 {
     LogDebug("RefreshCalled");
 
+    parent.getLockStatus(device)
+
 }
 
 void lock()
 {
     LogInfo("Locking Door");
+    parent.lockDoor(device)
+
 }
 
 void unlock()
 {
     LogInfo("Unlocking Door");
+    parent.unlockDoor(device)
+
 }
 
 void dooropened()
