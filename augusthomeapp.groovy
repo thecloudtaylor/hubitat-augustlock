@@ -167,8 +167,8 @@ def initialize()
     unschedule()
     refreshToken()
     refreshLocks()
-    runEvery15Minutes(refreshLocks)
-    runEvery3Hours(refreshToken)
+    //runEvery15Minutes(refreshLocks)
+    //runEvery3Hours(refreshToken)
 
 }
 
@@ -414,6 +414,10 @@ def refreshToken()
         return false;
     }
 
+    def runTime = new Date()
+    runTime.setHours(24)
+    schedule(runTime, refreshToken)
+
 }
 
 def discoverLocks() 
@@ -497,6 +501,9 @@ def refreshLocks()
             getLockStatus(it);
         }
     }
+    def runTime = new Date()
+    runTime.setMinutes(15)
+    schedule(runTime, refreshLocks)
 }
 
 def getLockStatus(com.hubitat.app.DeviceWrapper device) 
