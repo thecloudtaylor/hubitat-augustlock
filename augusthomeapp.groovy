@@ -416,7 +416,7 @@ def refreshToken()
 
     def runTime = new Date()
     runTime.setHours(24)
-    schedule(runTime, refreshToken)
+    runOnce(runTime, refreshToken)
 
 }
 
@@ -503,7 +503,9 @@ def refreshLocks()
     }
     def runTime = new Date()
     runTime.setMinutes(15)
-    schedule(runTime, refreshLocks)
+    LogDebug("TokenRefresh Scheduled at: ${runTime}")
+    runOnce(runTime, refreshLocks)
+
 }
 
 def getLockStatus(com.hubitat.app.DeviceWrapper device) 
