@@ -167,9 +167,6 @@ def initialize()
     unschedule()
     refreshToken()
     refreshLocks()
-    //runEvery15Minutes(refreshLocks)
-    //runEvery3Hours(refreshToken)
-
 }
 
 def updated() 
@@ -501,9 +498,11 @@ def refreshLocks()
             getLockStatus(it);
         }
     }
+    def refTimeInSec = refreshIntervals.toInteger()
+
     def runTime = new Date()
-    runTime.setMinutes(15)
-    LogDebug("TokenRefresh Scheduled at: ${runTime}")
+    runTime.setSeconds(refTimeInSec)
+    LogDebug("LockRefresh Scheduled at: ${runTime}")
     runOnce(runTime, refreshLocks)
 
 }
@@ -699,6 +698,11 @@ def listDiscoveredDevices() {
     section {
         paragraph "Discovered devices are listed below:"
         paragraph links
+    }
+    section {
+        paragraph "Refresh interval (how often devices are automaticaly refreshed/polled):"
+
+        input name: "refreshIntervals", type: "enum", title: "Set the refresh interval.", options: [0:"off", 60:"1 minute", 120:"2 minutes", 300:"5 minutes",600:"10 minutes",900:"15 minutes",1800:"30 minutes",3600:"60 minutes"], required: true, defaultValue: "600"
     }
 }
 
