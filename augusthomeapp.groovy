@@ -465,14 +465,28 @@ def discoverLocks()
         
         try 
         {
-            addChildDevice(
-                'thecloudtaylor',
-                'August WiFI Lock',
-                "${it.key}",
-                [
-                    name: "August WiFI Lock",
-                    label: "${it.value['HouseName']} - ${it.value['LockName']}"
-                ])
+            if (${it.value['LockStatus'].doorState != "init")
+            {
+                addChildDevice(
+                    'thecloudtaylor',
+                    'August Lock with DoorSense',
+                    "${it.key}",
+                    [
+                        name: "August WiFI Lock",
+                        label: "${it.value['HouseName']} - ${it.value['LockName']}"
+                    ])
+            }
+            else
+            {
+                addChildDevice(
+                    'thecloudtaylor',
+                    'August Lock',
+                    "${it.key}",
+                    [
+                        name: "August WiFI Lock",
+                        label: "${it.value['HouseName']} - ${it.value['LockName']}"
+                    ])   
+            }
         } 
         catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
         {

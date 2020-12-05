@@ -10,17 +10,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 11-25-2020 :  Initial 
 11-28-2020 :  0.0.1 Alpha
+12-4-2020:    Refactor drivers
 */
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 metadata {
-    definition (name: "August WiFI Lock", namespace: "thecloudtaylor", author: "Taylor Brown") {
+    definition (name: "August Lock", namespace: "thecloudtaylor", author: "Taylor Brown") {
         capability "Lock"
-        capability "Actuator"
         capability "Refresh"
-        capability "ContactSensor"
     }
 
     preferences{
@@ -97,18 +96,4 @@ void unlock()
     LogInfo("Unlocking Door");
     parent.unlockDoor(device)
 
-}
-
-void dooropened()
-{
-    LogDebug("DoorOpenedCalled");
-
-    sendEvent(name:"contact", value: "open", isStateChange: true, descriptionText: "Door Opened");
-}
-
-void doorclosed()
-{
-    LogDebug("DoorClosedCalled");
-
-    sendEvent(name:"contact", value: "closed", isStateChange: true, descriptionText: "Door Closed");
 }
