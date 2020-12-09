@@ -601,6 +601,20 @@ def updateLockDeviceStatus(com.hubitat.app.DeviceWrapper device)
         sendEvent(device, [name: 'battery', value: (batteryLevel*100).intValue()])
     }
 
+    if (reJson.containsKey("keypad"))
+    {
+        LogDebug("Keypad Found")
+        keyDev = getChildDevice(reJson.keypad._id)
+        if (keyDev==null)
+        {
+            discoverKeypad(device)
+            return;
+        }
+
+        def keyPadBatteryLevel = reJson.keypad.batteryRaw
+        LogDebug("updateLockDeviceStatus-KeyPadBatt: ${keyPadBatteryLevel}")
+        sendEvent(keyDev, [name: 'batteryLevel', value: keyPadBatteryLevel])
+    }
 }
 
 def discoverKeypad(com.hubitat.app.DeviceWrapper device) 

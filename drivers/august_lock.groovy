@@ -103,5 +103,24 @@ void unlock()
 void createChildKeypad(id, lockId)
 {
     LogInfo("createChildKeypad(id:${id}; lockId:${lockId})")
+    try 
+    {
+        addChildDevice(
+            'thecloudtaylor',
+            'August Keypad',
+            "${it.id}",
+            [
+                name: "August Keypad",
+                label: "KeypadID: ${id}"
+            ])
+    } 
+    catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
+    {
+        "${e.message} - you need to install the appropriate driver: ${device.type}"
+    } 
+    catch (IllegalArgumentException ignored) 
+    {
+        //Intentionally ignored.  Expected if device id already exists in HE.
+    }
     
 }

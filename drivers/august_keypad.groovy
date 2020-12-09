@@ -8,20 +8,16 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-11-25-2020 :  Initial 
-11-28-2020 :  0.0.1 Alpha
-12-4-2020:    Refactor drivers
+12-8-2020 :  Initial 
 */
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 metadata {
-    definition (name: "August Lock with DoorSense", namespace: "thecloudtaylor", author: "Taylor Brown") {
-        capability "Lock"
+    definition (name: "August Keypad", namespace: "thecloudtaylor", author: "Taylor Brown") {
         capability "Refresh"
-        capability "ContactSensor"
-        capability "Battery"
+        attribute "batteryLevel", "string"
     }
 
     preferences{
@@ -83,58 +79,5 @@ void refresh()
 {
     LogDebug("RefreshCalled");
 
-    parent.updateLockDeviceStatus(device)
-
-}
-
-void lock()
-{
-    LogInfo("Locking Door");
-    parent.lockDoor(device)
-
-}
-
-void unlock()
-{
-    LogInfo("Unlocking Door");
-    parent.unlockDoor(device)
-
-}
-
-void dooropened()
-{
-    LogDebug("DoorOpenedCalled");
-
-    sendEvent(name:"contact", value: "open", isStateChange: true, descriptionText: "Door Opened");
-}
-
-void doorclosed()
-{
-    LogDebug("DoorClosedCalled");
-
-    sendEvent(name:"contact", value: "closed", isStateChange: true, descriptionText: "Door Closed");
-}
-
-void createChildKeypad(id, lockId)
-{
-    LogInfo("createChildKeypad(id:${id}; lockId:${lockId})")
-    try 
-    {
-        addChildDevice(
-            'thecloudtaylor',
-            'August Keypad',
-            "${it.id}",
-            [
-                name: "August Keypad",
-                label: "KeypadID: ${id}"
-            ])
-    } 
-    catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
-    {
-        "${e.message} - you need to install the appropriate driver: ${device.type}"
-    } 
-    catch (IllegalArgumentException ignored) 
-    {
-        //Intentionally ignored.  Expected if device id already exists in HE.
-    }
+    parent.refresh()
 }
