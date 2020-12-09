@@ -99,3 +99,9 @@ void unlock()
     parent.unlockDoor(device)
 
 }
+
+void createChildKeypad(id, lockId)
+{
+    LogInfo("createChildKeypad(id:${id}; lockId:${lockId})")
+    
+}

@@ -117,6 +117,6 @@ void doorclosed()
 
 void createChildKeypad(id, lockId)
 {
-    LogDebug("createChildKeypad(id:${id}; lockId:${lockId})")
+    LogInfo("createChildKeypad(id:${id}; lockId:${lockId})")
     
 }
