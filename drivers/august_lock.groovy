@@ -80,7 +80,7 @@ void refresh()
 {
     LogDebug("RefreshCalled");
 
-    parent.getLockStatus(device)
+    parent.updateLockDeviceStatus(device)
 
 }
 

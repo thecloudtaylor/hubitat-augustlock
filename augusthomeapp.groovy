@@ -462,17 +462,21 @@ def discoverLocks()
         LogDebug("macAddress: ${it.value['macAddress']}")
         LogDebug("HouseID: ${it.value['HouseID']}")
         LogDebug("HouseName: ${it.value['HouseName']}")
+
+        lockStatus = getLockStatus(it.key)
+        LogDebug("LockStatus: ${lockStatus.doorState}")
+
         
         try 
         {
-            if (${it.value['LockStatus'].doorState != "init")
+            if (lockStatus.doorState != "init")
             {
                 addChildDevice(
                     'thecloudtaylor',
                     'August Lock with DoorSense',
                     "${it.key}",
                     [
-                        name: "August WiFI Lock",
+                        name: "August Lock with DoorSense",
                         label: "${it.value['HouseName']} - ${it.value['LockName']}"
                     ])
             }
@@ -483,7 +487,7 @@ def discoverLocks()
                     'August Lock',
                     "${it.key}",
                     [
-                        name: "August WiFI Lock",
+                        name: "August Lock",
                         label: "${it.value['HouseName']} - ${it.value['LockName']}"
                     ])   
             }
@@ -509,23 +513,25 @@ def refreshLocks()
     {
         if (it != null) 
         {
-            getLockStatus(it);
+            updateLockDeviceStatus(it);
         }
     }
-    def refTimeInSec = refreshIntervals.toInteger()
 
-    def runTime = new Date()
-    runTime.setSeconds(refTimeInSec)
-    LogDebug("LockRefresh Scheduled at: ${runTime}")
-    runOnce(runTime, refreshLocks)
-
+    if (refreshIntervals != "0" && refreshIntervals != null)
+    {
+        def cronString = ('0 */' + refreshIntervals + ' * ? * *')
+        LogDebug("Scheduling Refresh cronstring: ${cronString}")
+        schedule(cronString, refreshLocks)
+    }
+    else
+    {
+        LogInfo("Auto Refresh Disabled.")
+    }
 }
 
-def getLockStatus(com.hubitat.app.DeviceWrapper device) 
+def getLockStatus(deviceID) 
 {
-    LogDebug("getLockStatus()");
-
-    def deviceID = device.getDeviceNetworkId();
+    LogDebug("getLockStatus(deviceID=${deviceID})");
 
     def uri = global_apiURL + "/locks/${deviceID}/status"
 
@@ -561,11 +567,22 @@ def getLockStatus(com.hubitat.app.DeviceWrapper device)
         return false;
     }
 
+    return reJson;
+}
+
+def updateLockDeviceStatus(com.hubitat.app.DeviceWrapper device) 
+{
+    LogDebug("updateLockDeviceStatus()");
+
+    def deviceID = device.getDeviceNetworkId();
+    def reJson = getLockStatus(deviceID)
+
 
     def lockStatus = reJson.status
     LogDebug("getLockStatus-status: ${lockStatus}")
     sendEvent(device, [name: 'lock', value: lockStatus])
 
+    //BUGBUG: need to case for doors that don't suppot doorsense
     def doorState = reJson.doorState
     LogDebug("getLockStatus-doorState: ${doorState}")
     sendEvent(device, [name: 'contact', value: doorState])
@@ -611,7 +628,7 @@ def lockDoor(com.hubitat.app.DeviceWrapper device)
         LogError("lockDoor failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
-    getLockStatus(device)
+    updateLockDeviceStatus(device)
 }
 
 def unlockDoor(com.hubitat.app.DeviceWrapper device) 
@@ -654,7 +671,7 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
         LogError("unlockDoor failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
-    getLockStatus(device)
+    updateLockDeviceStatus(device)
 }
 
 
@@ -716,7 +733,7 @@ def listDiscoveredDevices() {
     section {
         paragraph "Refresh interval (how often devices are automaticaly refreshed/polled):"
 
-        input name: "refreshIntervals", type: "enum", title: "Set the refresh interval.", options: [0:"off", 60:"1 minute", 120:"2 minutes", 300:"5 minutes",600:"10 minutes",900:"15 minutes",1800:"30 minutes",3600:"60 minutes"], required: true, defaultValue: "600"
+        input name: "refreshIntervals", type: "enum", title: "Set the refresh interval.", options: [0:"off", 1:"1 minute", 2:"2 minutes", 5:"5 minutes",10:"10 minutes",15:"15 minutes",30:"30 minutes",55:"55 minutes"], required: true, defaultValue: "10", submitOnChange: true
     }
 }
 
