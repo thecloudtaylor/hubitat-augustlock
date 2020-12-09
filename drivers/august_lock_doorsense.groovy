@@ -123,7 +123,7 @@ void createChildKeypad(id, lockId)
         addChildDevice(
             'thecloudtaylor',
             'August Keypad',
-            "${it.id}",
+            "${id}",
             [
                 name: "August Keypad",
                 label: "KeypadID: ${id}"
