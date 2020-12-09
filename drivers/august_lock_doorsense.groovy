@@ -21,6 +21,7 @@ metadata {
         capability "Lock"
         capability "Refresh"
         capability "ContactSensor"
+        capability "Battery"
     }
 
     preferences{
@@ -60,6 +61,7 @@ void disableDebugLog()
 void installed()
 {
     LogInfo("Installing.");
+    refresh()
 }
 
 void uninstalled()
@@ -111,4 +113,10 @@ void doorclosed()
     LogDebug("DoorClosedCalled");
 
     sendEvent(name:"contact", value: "closed", isStateChange: true, descriptionText: "Door Closed");
+}
+
+void createChildKeypad(id, lockId)
+{
+    LogDebug("createChildKeypad(id:${id}; lockId:${lockId})")
+    
 }

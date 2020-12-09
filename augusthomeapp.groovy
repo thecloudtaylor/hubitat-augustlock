@@ -463,10 +463,9 @@ def discoverLocks()
         LogDebug("HouseID: ${it.value['HouseID']}")
         LogDebug("HouseName: ${it.value['HouseName']}")
 
-        lockStatus = getLockStatus(it.key)
-        LogDebug("LockStatus: ${lockStatus.doorState}")
+        lockStatus = getLock(it.key)
+        LogDebug("LockStatus: ${lockStatus.LockStatus.doorState}")
 
-        
         try 
         {
             if (lockStatus.doorState != "init")
@@ -529,11 +528,13 @@ def refreshLocks()
     }
 }
 
-def getLockStatus(deviceID) 
+def getLock(deviceID) 
 {
-    LogDebug("getLockStatus(deviceID=${deviceID})");
+    LogDebug("getLock(deviceID=${deviceID})");
 
-    def uri = global_apiURL + "/locks/${deviceID}/status"
+    //def uri = global_apiURL + "/locks/${deviceID}/status"
+    def uri = global_apiURL + "/locks/${deviceID}"
+
 
     def headers = [
         "Accept-Version":global_HeaderAcceptVersion,
@@ -545,7 +546,7 @@ def getLockStatus(deviceID)
     ]
 
     def params = [ uri: uri, headers:headers]
-    LogDebug("getLockStatus-params ${params}")
+    LogDebug("getLock-params ${params}")
 
     def reJson =''
     try
@@ -563,7 +564,7 @@ def getLockStatus(deviceID)
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
-        LogError("getLockStatus failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        LogError("getLock failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
 
@@ -575,18 +576,40 @@ def updateLockDeviceStatus(com.hubitat.app.DeviceWrapper device)
     LogDebug("updateLockDeviceStatus()");
 
     def deviceID = device.getDeviceNetworkId();
-    def reJson = getLockStatus(deviceID)
+    def reJson = getLock(deviceID)
 
 
-    def lockStatus = reJson.status
-    LogDebug("getLockStatus-status: ${lockStatus}")
+    def lockStatus = reJson.LockStatus.status
+    LogDebug("updateLockDeviceStatus-status: ${lockStatus}")
     sendEvent(device, [name: 'lock', value: lockStatus])
 
-    def doorState = reJson.doorState
-    LogDebug("getLockStatus-doorState: ${doorState}")
+    def doorState = reJson.LockStatus.doorState
+    LogDebug("updateLockDeviceStatus-doorState: ${doorState}")
     if (doorState != "init")
     {
         sendEvent(device, [name: 'contact', value: doorState])
+    }
+
+    def batteryLevel = reJson.battery
+    LogDebug("updateLockDeviceStatus-battery: ${batteryLevel}")
+    if (batteryLevel > 0)
+    {
+        sendEvent(device, [name: 'battery', value: (batteryLevel*100).intValue()])
+    }
+
+}
+
+def discoverKeypad(com.hubitat.app.DeviceWrapper device) 
+{
+    LogDebug("discoverKeypad()");
+
+    def deviceID = device.getDeviceNetworkId();
+    def reJson = getLock(deviceID)
+
+    if (reJson.containsKey("keypad"))
+    {
+        LogInfo("Keypad Found")
+        device.createChildKeypad(reJson.keypad._id, reJson.keypad.lockID)
     }
 }
 
@@ -608,7 +631,7 @@ def lockDoor(com.hubitat.app.DeviceWrapper device)
     ]
 
     def params = [ uri: uri, headers:headers]
-    LogDebug("getLockStatus-params ${params}")
+    LogDebug("lockDoor-params ${params}")
 
     try
     {
@@ -651,7 +674,7 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
     ]
 
     def params = [ uri: uri, headers:headers]
-    LogDebug("getLockStatus-params ${params}")
+    LogDebug("unlockDoor-params ${params}")
 
     try
     {
@@ -786,4 +809,12 @@ def discoverDevices()
     LogDebug("discoverDevices()");
 
     discoverLocks()
+
+    def children = getChildDevices()
+    LogInfo("Discovering Child Devices Of Lock: ${children}")
+    children.each {
+        if (it != null) {
+            discoverKeypad(it)
+        }
+    } 
 }

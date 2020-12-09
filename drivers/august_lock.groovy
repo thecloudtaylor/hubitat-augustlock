@@ -20,6 +20,7 @@ metadata {
     definition (name: "August Lock", namespace: "thecloudtaylor", author: "Taylor Brown") {
         capability "Lock"
         capability "Refresh"
+        capability "Battery"
     }
 
     preferences{
@@ -59,6 +60,7 @@ void disableDebugLog()
 void installed()
 {
     LogInfo("Installing.");
+    refresh()
 }
 
 void uninstalled()
