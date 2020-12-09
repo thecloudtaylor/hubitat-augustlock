@@ -582,10 +582,12 @@ def updateLockDeviceStatus(com.hubitat.app.DeviceWrapper device)
     LogDebug("getLockStatus-status: ${lockStatus}")
     sendEvent(device, [name: 'lock', value: lockStatus])
 
-    //BUGBUG: need to case for doors that don't suppot doorsense
     def doorState = reJson.doorState
     LogDebug("getLockStatus-doorState: ${doorState}")
-    sendEvent(device, [name: 'contact', value: doorState])
+    if (doorState != "init")
+    {
+        sendEvent(device, [name: 'contact', value: doorState])
+    }
 }
 
 def lockDoor(com.hubitat.app.DeviceWrapper device) 
