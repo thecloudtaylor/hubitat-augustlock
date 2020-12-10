@@ -172,7 +172,7 @@ def initialize()
 def updated() 
 {
     LogDebug("Updated with config: ${settings}");
-    if (refreshIntervals == null || refreshIntervals > 55)
+    if (refreshIntervals == null)
     {
         refreshIntervals = 10;
     }
@@ -629,6 +629,7 @@ def discoverKeypad(com.hubitat.app.DeviceWrapper device)
         LogInfo("Keypad Found")
         device.createChildKeypad(reJson.keypad._id, reJson.keypad.lockID)
     }
+    updateLockDeviceStatus(device)
 }
 
 def lockDoor(com.hubitat.app.DeviceWrapper device) 
@@ -778,10 +779,7 @@ def listDiscoveredDevices() {
 
         input name: "refreshIntervals", type: "enum", title: "Set the refresh interval.", options: [0:"off", 1:"1 minute", 2:"2 minutes", 5:"5 minutes",10:"10 minutes",15:"15 minutes",30:"30 minutes",55:"55 minutes"], required: true, defaultValue: "10", submitOnChange: true
     }
-}
-
-    //
-    
+}   
     
 
 def appButtonHandler(btn) {

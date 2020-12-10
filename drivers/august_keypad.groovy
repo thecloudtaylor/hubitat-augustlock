@@ -17,6 +17,7 @@ import groovy.json.JsonOutput
 metadata {
     definition (name: "August Keypad", namespace: "thecloudtaylor", author: "Taylor Brown") {
         capability "Refresh"
+        capability "LockCodes"
         attribute "batteryLevel", "string"
     }
 
@@ -80,4 +81,24 @@ void refresh()
     LogDebug("RefreshCalled");
 
     parent.refresh()
+}
+
+void deleteCode(codeposition) 
+{
+    LogDebug("deleteCode(): ${codeposition}");
+}
+
+void getCodes() 
+{
+    LogDebug("getCodes()");
+}
+
+void setCode(codeposition, pincode, name) 
+{
+    LogDebug("setCode(): codeposition:${codeposition}, pincode:${pincode}, name:${name}");
+}
+
+void setCodeLength(pincodelength) 
+{
+    LogDebug("setCodeLength(): ${pincodelength}");
 }
