@@ -30,9 +30,6 @@ metadata {
 		input ("descriptionText", "bool", 
 			   title: "Enable description text logging", 
 			   defaultValue: true)
-        input ("debugCreateFakeKeypadOnRefresh", "bool", 
-			   title: "On refresh create a fake keybpad if none exisits.", 
-			   defaultValue: false)
     }
 }
 
@@ -86,24 +83,6 @@ void refresh()
     LogDebug("RefreshCalled");
 
     parent.updateLockDeviceStatus(device)
-
-    if (debugCreateFakeKeypadOnRefresh)
-    {
-        def fakeDevice = getChildDevice("fake_keypad")
-        if (fakeDevice == null)
-        {
-            addChildDevice(
-                'thecloudtaylor',
-                'August Keypad',
-                "fake_keypad",
-                [
-                    name: "August Keypad",
-                    label: "KeypadID: 1234"
-                ])
-        }
-
-    }
-
 }
 
 void lock()
@@ -142,4 +121,11 @@ void createChildKeypad(id, lockId)
     {
         //Intentionally ignored.  Expected if device id already exists in HE.
     }
+}
+
+void getCodes()
+{
+    LogDebug("getCodes()");
+
+    parent.getPin(device)
 }

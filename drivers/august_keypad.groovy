@@ -91,6 +91,7 @@ void deleteCode(codeposition)
 void getCodes() 
 {
     LogDebug("getCodes()");
+    parent.getCodes();
 }
 
 void setCode(codeposition, pincode, name) 

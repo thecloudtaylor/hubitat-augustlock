@@ -719,6 +719,51 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
 }
 
 
+def getPin(com.hubitat.app.DeviceWrapper device) 
+{
+    def deviceID = device.getDeviceNetworkId();
+
+    LogDebug("getPin(deviceID=${deviceID})");
+
+    //def uri = global_apiURL + "/locks/${deviceID}/status"
+    def uri = global_apiURL + "/locks/${deviceID}/pins"
+
+
+    def headers = [
+        "Accept-Version":global_HeaderAcceptVersion,
+        "x-august-api-key":global_HeaderApiKey,
+        "x-kease-api-key":global_HeaderApiKey,
+        "Content-Type":"application/json",
+        "User-Agent":global_HeaderUserAgent,
+        "x-august-access-token":state.access_token
+    ]
+
+    def params = [ uri: uri, headers:headers]
+    LogDebug("getPin-params ${params}")
+
+    def reJson =''
+    try
+    {
+        httpGet(params) { response -> 
+    
+            def reCode = response.getStatus();
+            reJson = response.getData();
+            LogDebug("reCode: ${reCode}")
+            LogDebug("reJson: ${reJson}")
+            response.getHeaders().each {
+                LogDebug("reHeader: ${it}")
+            }
+        }
+    }
+    catch (groovyx.net.http.HttpResponseException e) 
+    {
+        LogError("getPin failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return false;
+    }
+
+    return reJson;
+}
+
 def getDiscoverButton() 
 {
     if (state.access_token == null) 
@@ -825,12 +870,5 @@ def discoverDevices()
     LogDebug("discoverDevices()");
 
     discoverLocks()
-
-    def children = getChildDevices()
-    LogInfo("Discovering Child Devices Of Lock: ${children}")
-    children.each {
-        if (it != null) {
-            discoverKeypad(it)
-        }
-    } 
+    refreshLocks()
 }

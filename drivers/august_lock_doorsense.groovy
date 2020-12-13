@@ -158,3 +158,10 @@ void createChildKeypad(id, lockId)
         //Intentionally ignored.  Expected if device id already exists in HE.
     }
 }
+
+void getCodes()
+{
+    LogDebug("getCodes()");
+
+    parent.getPin(device)
+}
