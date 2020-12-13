@@ -31,11 +31,24 @@ metadata {
 		input ("descriptionText", "bool", 
 			   title: "Enable description text logging", 
 			   defaultValue: true)
-        input ("debugCreateFakeKeypadOnRefresh", "bool", 
-			   title: "On refresh create a fake keybpad if none exisits.", 
-			   defaultValue: false)
     }
 }
+
+void dooropened()
+{
+    LogDebug("DoorOpenedCalled");
+
+    sendEvent(name:"contact", value: "open", isStateChange: true, descriptionText: "Door Opened");
+}
+
+void doorclosed()
+{
+    LogDebug("DoorClosedCalled");
+
+    sendEvent(name:"contact", value: "closed", isStateChange: true, descriptionText: "Door Closed");
+}
+
+//common lock code
 
 void LogDebug(logMessage)
 {
@@ -70,6 +83,14 @@ void installed()
 void uninstalled()
 {
     LogInfo("Uninstalling.");
+    
+    def children = getChildDevices()
+    LogInfo("Deleting all child devices: ${children}")
+    children.each {
+        if (it != null) {
+            deleteChildDevice(it.getDeviceNetworkId())
+        }
+    } 
 }
 
 void updated() 
@@ -87,24 +108,6 @@ void refresh()
     LogDebug("RefreshCalled");
 
     parent.updateLockDeviceStatus(device)
-
-    if (debugCreateFakeKeypadOnRefresh)
-    {
-        def fakeDevice = getChildDevice("fake_keypad")
-        if (fakeDevice == null)
-        {
-            addChildDevice(
-                'thecloudtaylor',
-                'August Keypad',
-                "fake_keypad",
-                [
-                    name: "August Keypad",
-                    label: "KeypadID: 1234"
-                ])
-        }
-
-    }
-
 }
 
 void lock()
@@ -121,19 +124,7 @@ void unlock()
 
 }
 
-void dooropened()
-{
-    LogDebug("DoorOpenedCalled");
 
-    sendEvent(name:"contact", value: "open", isStateChange: true, descriptionText: "Door Opened");
-}
-
-void doorclosed()
-{
-    LogDebug("DoorClosedCalled");
-
-    sendEvent(name:"contact", value: "closed", isStateChange: true, descriptionText: "Door Closed");
-}
 
 void createChildKeypad(id, lockId)
 {
@@ -146,7 +137,7 @@ void createChildKeypad(id, lockId)
             "${id}",
             [
                 name: "August Keypad",
-                label: "KeypadID: ${id}"
+                label: "KeypadID: ${id} LockID: ${lockId}"
             ])
     } 
     catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
@@ -157,6 +148,21 @@ void createChildKeypad(id, lockId)
     {
         //Intentionally ignored.  Expected if device id already exists in HE.
     }
+}
+
+void updateKeypad(keypadMap)
+{
+    LogDebug("updateKeypad() keypadMap: ${keypadMap}");
+
+    def keyDev = getChildDevice(keypadMap._id)
+    if (keyDev == null)
+    {
+        LogDebug("Keypad was found but get Device was Null.")
+        createChildKeypad(keypadMap._id, keypadMap.lockID)
+        keyDev = getChildDevice(keypadMap._id)
+    }
+
+    keyDev.updateKeypad(keypadMap)
 }
 
 void getCodes(com.hubitat.app.DeviceWrapper keypadDevice)

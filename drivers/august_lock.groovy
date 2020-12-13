@@ -33,6 +33,8 @@ metadata {
     }
 }
 
+//common lock code
+
 void LogDebug(logMessage)
 {
     if(debugLogs)
@@ -66,6 +68,14 @@ void installed()
 void uninstalled()
 {
     LogInfo("Uninstalling.");
+    
+    def children = getChildDevices()
+    LogInfo("Deleting all child devices: ${children}")
+    children.each {
+        if (it != null) {
+            deleteChildDevice(it.getDeviceNetworkId())
+        }
+    } 
 }
 
 void updated() 
@@ -99,6 +109,8 @@ void unlock()
 
 }
 
+
+
 void createChildKeypad(id, lockId)
 {
     LogInfo("createChildKeypad(id:${id}; lockId:${lockId})")
@@ -110,7 +122,7 @@ void createChildKeypad(id, lockId)
             "${id}",
             [
                 name: "August Keypad",
-                label: "KeypadID: ${id}"
+                label: "KeypadID: ${id} LockID: ${lockId}"
             ])
     } 
     catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
@@ -121,6 +133,21 @@ void createChildKeypad(id, lockId)
     {
         //Intentionally ignored.  Expected if device id already exists in HE.
     }
+}
+
+void updateKeypad(keypadMap)
+{
+    LogDebug("updateKeypad() keypadMap: ${keypadMap}");
+
+    def keyDev = getChildDevice(keypadMap._id)
+    if (keyDev == null)
+    {
+        LogDebug("Keypad was found but get Device was Null.")
+        createChildKeypad(keypadMap._id, keypadMap.lockID)
+        keyDev = getChildDevice(keypadMap._id)
+    }
+
+    keyDev.updateKeypad(keypadMap)
 }
 
 void getCodes(com.hubitat.app.DeviceWrapper keypadDevice)

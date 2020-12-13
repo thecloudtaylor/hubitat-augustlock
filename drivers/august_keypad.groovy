@@ -18,7 +18,7 @@ metadata {
     definition (name: "August Keypad", namespace: "thecloudtaylor", author: "Taylor Brown") {
         capability "Refresh"
         capability "LockCodes"
-        attribute "batteryLevel", "string"
+        attribute "Battery Level", "string"
     }
 
     preferences{
@@ -102,4 +102,13 @@ void setCode(codeposition, pincode, name)
 void setCodeLength(pincodelength) 
 {
     LogDebug("setCodeLength(): ${pincodelength}");
+}
+
+void updateKeypad(keypadMap)
+{
+    LogDebug("updateKeypad() keypadMap: ${keypadMap}");
+
+    def keyPadBatteryLevel = keypadMap.batteryLevel
+    LogDebug("updateLockDeviceStatus-KeyPadBatt: ${keyPadBatteryLevel}")
+    sendEvent(name:"Battery Level", value:keyPadBatteryLevel)
 }

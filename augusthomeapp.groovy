@@ -101,6 +101,9 @@ def debugPage() {
         section {
             input 'initialize', 'button', title: 'initialize', submitOnChange: true
         }
+        section {
+            input 'test', 'button', title: 'test', submitOnChange: true
+        }
     }
 }
 
@@ -497,7 +500,7 @@ def discoverLocks()
         } 
         catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
         {
-            "${e.message} - you need to install the appropriate driver: ${device.type}"
+            "${e.message} - you need to install the appropriate driver."
         } 
         catch (IllegalArgumentException ignored) 
         {
@@ -603,18 +606,8 @@ def updateLockDeviceStatus(com.hubitat.app.DeviceWrapper device)
 
     if (reJson.containsKey("keypad"))
     {
-        LogDebug("Keypad Found")
-        keyDev = getChildDevice(reJson.keypad._id)
-        if (keyDev == null)
-        {
-            LogDebug("Keypad was found but get Device was Null.")
-            //discoverKeypad(device)
-            return;
-        }
-
-        def keyPadBatteryLevel = reJson.keypad.batteryRaw
-        LogDebug("updateLockDeviceStatus-KeyPadBatt: ${keyPadBatteryLevel}")
-        sendEvent(keyDev, [name: 'batteryLevel', value: keyPadBatteryLevel])
+        LogDebug("Keypad Found with ID: ${reJson.keypad._id}")
+        device.updateKeypad(reJson.keypad)
     }
 }
 
@@ -850,6 +843,9 @@ def appButtonHandler(btn) {
     case 'initialize':
         initialize()
         break
+    case 'test':
+        test()
+        break
     }
 }
 
@@ -859,7 +855,7 @@ def deleteDevices()
     LogInfo("Deleting all child devices: ${children}")
     children.each {
         if (it != null) {
-            deleteChildDevice it.getDeviceNetworkId()
+            deleteChildDevice(it.getDeviceNetworkId())
         }
     } 
 }
@@ -871,4 +867,18 @@ def discoverDevices()
     discoverLocks()
     discoverKeypad()
     refreshLocks()
+}
+
+def test()
+{
+    LogDebug("test()")
+    def keypadMap = [_id:"xxxxxxxx", serialNumber:"xxxxxxxxx", lockID:"xxxxxxxxxxx", currentFirmwareVersion:"2.27.0", battery:[:], batteryLevel:"Medium", batteryRaw:"165"]
+
+    LogDebug(keypadMap)
+    def children = getChildDevices()
+    LogDebug(" All child devices: ${children}")
+    children.each { 
+        it.updateKeypad(keypadMap)
+    }
+
 }
