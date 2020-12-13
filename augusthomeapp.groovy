@@ -605,9 +605,10 @@ def updateLockDeviceStatus(com.hubitat.app.DeviceWrapper device)
     {
         LogDebug("Keypad Found")
         keyDev = getChildDevice(reJson.keypad._id)
-        if (keyDev==null)
+        if (keyDev == null)
         {
-            discoverKeypad(device)
+            LogDebug("Keypad was found but get Device was Null.")
+            //discoverKeypad(device)
             return;
         }
 
@@ -719,15 +720,13 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
 }
 
 
-def getPin(com.hubitat.app.DeviceWrapper device) 
+def updateLockCodes(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice) 
 {
-    def deviceID = device.getDeviceNetworkId();
+    def lockDeviceID = lockDevice.getDeviceNetworkId();
 
-    LogDebug("getPin(deviceID=${deviceID})");
+    LogDebug("getPin(deviceID=${lockDeviceID})");
 
-    //def uri = global_apiURL + "/locks/${deviceID}/status"
-    def uri = global_apiURL + "/locks/${deviceID}/pins"
-
+    def uri = global_apiURL + "/locks/${lockDeviceID}/pins"
 
     def headers = [
         "Accept-Version":global_HeaderAcceptVersion,
@@ -870,5 +869,6 @@ def discoverDevices()
     LogDebug("discoverDevices()");
 
     discoverLocks()
+    discoverKeypad()
     refreshLocks()
 }

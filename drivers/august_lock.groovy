@@ -123,9 +123,9 @@ void createChildKeypad(id, lockId)
     }
 }
 
-void getCodes()
+void getCodes(com.hubitat.app.DeviceWrapper keypadDevice)
 {
     LogDebug("getCodes()");
 
-    parent.getPin(device)
+    parent.updateLockCodes(device, keypadDevice)
 }
