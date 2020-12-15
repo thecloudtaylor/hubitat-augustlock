@@ -169,5 +169,5 @@ void getCodes(com.hubitat.app.DeviceWrapper keypadDevice)
 {
     LogDebug("getCodes()");
 
-    parent.updateLockCodes(device, keypadDevice)
+    parent.getLockCodes(device, keypadDevice)
 }

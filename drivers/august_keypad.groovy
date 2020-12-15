@@ -91,7 +91,7 @@ void deleteCode(codeposition)
 void getCodes() 
 {
     LogDebug("getCodes()");
-    def augustJson = parent.getCodes(device);
+    parent.getCodes(device);
 }
 
 void setCode(codeposition, pincode, name) 

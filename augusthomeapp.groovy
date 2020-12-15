@@ -713,11 +713,11 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
 }
 
 
-def updateLockCodes(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice) 
+def getLockCodes(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice) 
 {
     def lockDeviceID = lockDevice.getDeviceNetworkId();
 
-    LogDebug("getPin(deviceID=${lockDeviceID})");
+    LogDebug("getLockCodes(deviceID=${lockDeviceID})");
 
     def uri = global_apiURL + "/locks/${lockDeviceID}/pins"
 
@@ -731,7 +731,7 @@ def updateLockCodes(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.De
     ]
 
     def params = [ uri: uri, headers:headers]
-    LogDebug("getPin-params ${params}")
+    LogDebug("getLockCodes-params ${params}")
 
     def reJson =''
     try
@@ -749,11 +749,26 @@ def updateLockCodes(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.De
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
-        LogError("getPin failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        LogError("getLockCodes failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
 
-    return reJson;
+//Used for testing
+//    reJson = [created:[], loaded:[[_id:"123xxxxxx", type:"pin", lockID:"123abcxxxxx", userID:"1234xxxxxxx", state:"loaded", pin:"123456", slot:"28", accessType:"always", callingUserID:"123xxxxx", apiKey:"987xxxxxxx", createdAt:"2020-06-06T00:43:18.938Z", updatedAt:"2020-06-06T00:43:21.972Z", loadedDate:"2020-06-06T00:43:21.972Z", firstName:"Emergency", lastName:"Code", unverified:true],[_id:"123xxxxxx", type:"pin", lockID:"123abcxxxxx", userID:"1234xxxxxxx", state:"loaded", pin:"2455", slot:"29", accessType:"always", callingUserID:"123xxxxx", apiKey:"987xxxxxxx", createdAt:"2020-06-06T00:43:18.938Z", updatedAt:"2020-06-06T00:43:21.972Z", loadedDate:"2020-06-06T00:43:21.972Z", firstName:"John", lastName:"Doe", unverified:true]], disabled:[], disabling:[], enabling:[], deleting:[], updating:[]]
+
+    def lockCodesJson = '{'
+    reJson.loaded.each { code ->
+        if (lockCodesJson.endsWith('}'))
+        {
+            lockCodesJson += ','
+        }
+        lockCodesJson += ('"' + code.slot + '":{"name":"' + code.firstName + ' ' + code.lastName + '","code":"' + code.pin + '"}')
+    }
+    lockCodesJson += '}'
+
+    // Pins are in clear text so hiding
+    //LogDebug("getLockCodes PinJson: ${lockCodesJson}")
+    sendEvent(keypadDevice, [name: 'lockCodes', value: encrypt(lockCodesJson)])
 }
 
 def getDiscoverButton() 
@@ -865,7 +880,12 @@ def discoverDevices()
     LogDebug("discoverDevices()");
 
     discoverLocks()
-    discoverKeypad()
+
+    def children = getChildDevices()
+    LogDebug("All child devices: ${children}")
+    children.each { 
+        discoverKeypad(it)
+    }
     refreshLocks()
 }
 
