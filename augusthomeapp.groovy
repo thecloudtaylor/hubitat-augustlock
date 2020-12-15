@@ -771,6 +771,61 @@ def getLockCodes(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.Devic
     sendEvent(keypadDevice, [name: 'lockCodes', value: encrypt(lockCodesJson)])
 }
 
+def deleteCode(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice, Map params)
+{
+    def codePosition = params.codeposition;
+    def lockDeviceID = lockDevice.getDeviceNetworkId();
+
+    LogDebug("deleteCode() deviceID=${lockDeviceID}; codePosition=${codePosition}")
+
+    LogError("deleteCode Not Yet Supported")
+    // As the August API is not documented and I don't have a keypad I can't add this support.
+
+    // There does seem to be a delete API (see the unexplored list at https://medium.com/@nolanbrown/august-lock-rest-apis-the-basics-7ec7f31e7874)
+    // Without more exploration I am not sure if it' "DELETE /locks/{lockID}/pins" or more likly something 
+    // something similar to PUT /locks/{lockID}/users/{userID}/pin
+}
+
+def setCode(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice, Map params)
+{
+    def pincode = params.pincode;  //might be encripted? if so run decript()
+    def codePosition = params.codeposition;
+    def name = params.name
+
+    def lockDeviceID = lockDevice.getDeviceNetworkId();
+
+    LogDebug("setCode() deviceID=${lockDeviceID}; codePosition=${codePosition}; pincode=${pincode}; name=${name}")
+
+    LogError("deleteCode Not Yet Supported")
+    // As the August API is not documented and I don't have a keypad I can't add this support.
+
+    // I suspect you first need to match the user or create one and then the pin 
+    // (see the unexplored list at https://medium.com/@nolanbrown/august-lock-rest-apis-the-basics-7ec7f31e7874)
+    // PUT /locks/adduser/{lockID}/{otherUserId}/{type} AND THEN PUT /locks/{lockID}/users/{userID}/pin
+}
+
+
+def grandChildDeviceHandler(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice, method, Map params=null)
+{    
+    LogDebug("grandChildDeviceHandler(method=${method})");
+
+
+    switch (method){
+        case 'getLockCodes':
+            getLockCodes(lockDevice, keypadDevice)
+        break
+        case 'deleteCode':
+            deleteCode(lockDevice, keypadDevice, params)
+        break
+        case 'setCode'
+            setCode(lockDevice, keypadDevice, params)
+        break
+        defaultValue :
+        LogError("No method named: ${method}")
+    }
+}
+
+
 def getDiscoverButton() 
 {
     if (state.access_token == null) 

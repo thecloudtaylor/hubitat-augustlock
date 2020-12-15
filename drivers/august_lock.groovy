@@ -150,9 +150,9 @@ void updateKeypad(keypadMap)
     keyDev.updateKeypad(keypadMap)
 }
 
-void getCodes(com.hubitat.app.DeviceWrapper keypadDevice)
+void callAugustAppForChild(com.hubitat.app.DeviceWrapper keypadDevice, method, Map params=null)
 {
-    LogDebug("getCodes()");
+    LogDebug("callAugustAppForChild() + method: ${method}");
 
-    parent.updateLockCodes(device, keypadDevice)
+    parent.grandChildDeviceHandler(device, keypadDevice, method, params)
 }

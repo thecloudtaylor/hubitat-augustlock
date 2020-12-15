@@ -86,22 +86,28 @@ void refresh()
 void deleteCode(codeposition) 
 {
     LogDebug("deleteCode(): ${codeposition}");
+    LogWarn("Delete Code Not Yet Implemented.")
+    //parent.callAugustAppForChild(device, "deleteCode", ["codeposition": codeposition]);
 }
 
 void getCodes() 
 {
     LogDebug("getCodes()");
-    parent.getCodes(device);
+    parent.callAugustAppForChild(device, "getLockCodes");
 }
 
 void setCode(codeposition, pincode, name) 
 {
     LogDebug("setCode(): codeposition:${codeposition}, pincode:${pincode}, name:${name}");
+    LogWarn("Set Code Not Yet Implemented.")
+
 }
 
 void setCodeLength(pincodelength) 
 {
     LogDebug("setCodeLength(): ${pincodelength}");
+    LogWarn("setCodeLength Code Not Yet Implemented.")
+
 }
 
 void updateKeypad(keypadMap)
