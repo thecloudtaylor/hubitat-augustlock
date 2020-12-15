@@ -114,17 +114,13 @@ void lock()
 {
     LogInfo("Locking Door");
     parent.lockDoor(device)
-
 }
 
 void unlock()
 {
     LogInfo("Unlocking Door");
     parent.unlockDoor(device)
-
 }
-
-
 
 void createChildKeypad(id, lockId)
 {
@@ -165,9 +161,9 @@ void updateKeypad(keypadMap)
     keyDev.updateKeypad(keypadMap)
 }
 
-void getCodes(com.hubitat.app.DeviceWrapper keypadDevice)
+void callAugustAppForChild(com.hubitat.app.DeviceWrapper keypadDevice, method, Map params=null)
 {
-    LogDebug("getCodes()");
+    LogDebug("callAugustAppForChild() + method: ${method}");
 
-    parent.getLockCodes(device, keypadDevice)
+    parent.grandChildDeviceHandler(device, keypadDevice, method, params)
 }

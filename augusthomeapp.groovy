@@ -753,9 +753,6 @@ def getLockCodes(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.Devic
         return false;
     }
 
-//Used for testing
-//    reJson = [created:[], loaded:[[_id:"123xxxxxx", type:"pin", lockID:"123abcxxxxx", userID:"1234xxxxxxx", state:"loaded", pin:"123456", slot:"28", accessType:"always", callingUserID:"123xxxxx", apiKey:"987xxxxxxx", createdAt:"2020-06-06T00:43:18.938Z", updatedAt:"2020-06-06T00:43:21.972Z", loadedDate:"2020-06-06T00:43:21.972Z", firstName:"Emergency", lastName:"Code", unverified:true],[_id:"123xxxxxx", type:"pin", lockID:"123abcxxxxx", userID:"1234xxxxxxx", state:"loaded", pin:"2455", slot:"29", accessType:"always", callingUserID:"123xxxxx", apiKey:"987xxxxxxx", createdAt:"2020-06-06T00:43:18.938Z", updatedAt:"2020-06-06T00:43:21.972Z", loadedDate:"2020-06-06T00:43:21.972Z", firstName:"John", lastName:"Doe", unverified:true]], disabled:[], disabling:[], enabling:[], deleting:[], updating:[]]
-
     def lockCodesJson = '{'
     reJson.loaded.each { code ->
         if (lockCodesJson.endsWith('}'))
@@ -817,10 +814,10 @@ def grandChildDeviceHandler(com.hubitat.app.DeviceWrapper lockDevice, com.hubita
         case 'deleteCode':
             deleteCode(lockDevice, keypadDevice, params)
         break
-        case 'setCode'
+        case 'setCode':
             setCode(lockDevice, keypadDevice, params)
         break
-        defaultValue :
+        defaultValue:
         LogError("No method named: ${method}")
     }
 }

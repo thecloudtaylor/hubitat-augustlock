@@ -99,17 +99,13 @@ void lock()
 {
     LogInfo("Locking Door");
     parent.lockDoor(device)
-
 }
 
 void unlock()
 {
     LogInfo("Unlocking Door");
     parent.unlockDoor(device)
-
 }
-
-
 
 void createChildKeypad(id, lockId)
 {
