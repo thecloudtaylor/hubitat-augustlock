@@ -8,19 +8,17 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-11-25-2020 :  Initial 
-11-28-2020 :  0.0.1 Alpha
+12-8-2020 :  Initial 
 */
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 metadata {
-    definition (name: "August WiFI Lock", namespace: "thecloudtaylor", author: "Taylor Brown") {
-        capability "Lock"
-        capability "Actuator"
+    definition (name: "August Keypad", namespace: "thecloudtaylor", author: "Taylor Brown") {
         capability "Refresh"
-        capability "ContactSensor"
+        capability "LockCodes"
+        attribute "Battery Level", "string"
     }
 
     preferences{
@@ -60,6 +58,7 @@ void disableDebugLog()
 void installed()
 {
     LogInfo("Installing.");
+    refresh()
 }
 
 void uninstalled()
@@ -81,34 +80,41 @@ void refresh()
 {
     LogDebug("RefreshCalled");
 
-    parent.getLockStatus(device)
+    parent.refresh()
+}
+
+void deleteCode(codeposition) 
+{
+    LogDebug("deleteCode(): ${codeposition}");
+    LogWarn("Delete Code Not Yet Implemented.")
+    //parent.callAugustAppForChild(device, "deleteCode", ["codeposition": codeposition]);
+}
+
+void getCodes() 
+{
+    LogDebug("getCodes()");
+    parent.callAugustAppForChild(device, "getLockCodes");
+}
+
+void setCode(codeposition, pincode, name) 
+{
+    LogDebug("setCode(): codeposition:${codeposition}, pincode:${pincode}, name:${name}");
+    LogWarn("Set Code Not Yet Implemented.")
 
 }
 
-void lock()
+void setCodeLength(pincodelength) 
 {
-    LogInfo("Locking Door");
-    parent.lockDoor(device)
+    LogDebug("setCodeLength(): ${pincodelength}");
+    LogWarn("setCodeLength Code Not Yet Implemented.")
 
 }
 
-void unlock()
+void updateKeypad(keypadMap)
 {
-    LogInfo("Unlocking Door");
-    parent.unlockDoor(device)
+    LogDebug("updateKeypad() keypadMap: ${keypadMap}");
 
-}
-
-void dooropened()
-{
-    LogDebug("DoorOpenedCalled");
-
-    sendEvent(name:"contact", value: "open", isStateChange: true, descriptionText: "Door Opened");
-}
-
-void doorclosed()
-{
-    LogDebug("DoorClosedCalled");
-
-    sendEvent(name:"contact", value: "closed", isStateChange: true, descriptionText: "Door Closed");
+    def keyPadBatteryLevel = keypadMap.batteryLevel
+    LogDebug("updateLockDeviceStatus-KeyPadBatt: ${keyPadBatteryLevel}")
+    sendEvent(name:"Battery Level", value:keyPadBatteryLevel)
 }

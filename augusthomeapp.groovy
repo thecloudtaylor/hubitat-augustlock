@@ -101,6 +101,9 @@ def debugPage() {
         section {
             input 'initialize', 'button', title: 'initialize', submitOnChange: true
         }
+        section {
+            input 'test', 'button', title: 'test', submitOnChange: true
+        }
     }
 }
 
@@ -172,6 +175,10 @@ def initialize()
 def updated() 
 {
     LogDebug("Updated with config: ${settings}");
+    if (refreshIntervals == null)
+    {
+        refreshIntervals = 10;
+    }
     initialize();
 }
 
@@ -462,21 +469,38 @@ def discoverLocks()
         LogDebug("macAddress: ${it.value['macAddress']}")
         LogDebug("HouseID: ${it.value['HouseID']}")
         LogDebug("HouseName: ${it.value['HouseName']}")
-        
+
+        lockStatus = getLock(it.key)
+        LogDebug("LockStatus: ${lockStatus.LockStatus.doorState}")
+
         try 
         {
-            addChildDevice(
-                'thecloudtaylor',
-                'August WiFI Lock',
-                "${it.key}",
-                [
-                    name: "August WiFI Lock",
-                    label: "${it.value['HouseName']} - ${it.value['LockName']}"
-                ])
+            if (lockStatus.doorState != "init")
+            {
+                addChildDevice(
+                    'thecloudtaylor',
+                    'August Lock with DoorSense',
+                    "${it.key}",
+                    [
+                        name: "August Lock with DoorSense",
+                        label: "${it.value['HouseName']} - ${it.value['LockName']}"
+                    ])
+            }
+            else
+            {
+                addChildDevice(
+                    'thecloudtaylor',
+                    'August Lock',
+                    "${it.key}",
+                    [
+                        name: "August Lock",
+                        label: "${it.value['HouseName']} - ${it.value['LockName']}"
+                    ])   
+            }
         } 
         catch (com.hubitat.app.exception.UnknownDeviceTypeException e) 
         {
-            "${e.message} - you need to install the appropriate driver: ${device.type}"
+            "${e.message} - you need to install the appropriate driver."
         } 
         catch (IllegalArgumentException ignored) 
         {
@@ -495,25 +519,29 @@ def refreshLocks()
     {
         if (it != null) 
         {
-            getLockStatus(it);
+            updateLockDeviceStatus(it);
         }
     }
-    def refTimeInSec = refreshIntervals.toInteger()
 
-    def runTime = new Date()
-    runTime.setSeconds(refTimeInSec)
-    LogDebug("LockRefresh Scheduled at: ${runTime}")
-    runOnce(runTime, refreshLocks)
-
+    if (refreshIntervals != "0" && refreshIntervals != null)
+    {
+        def cronString = ('0 */' + refreshIntervals + ' * ? * *')
+        LogDebug("Scheduling Refresh cronstring: ${cronString}")
+        schedule(cronString, refreshLocks)
+    }
+    else
+    {
+        LogInfo("Auto Refresh Disabled.")
+    }
 }
 
-def getLockStatus(com.hubitat.app.DeviceWrapper device) 
+def getLock(deviceID) 
 {
-    LogDebug("getLockStatus()");
+    LogDebug("getLock(deviceID=${deviceID})");
 
-    def deviceID = device.getDeviceNetworkId();
+    //def uri = global_apiURL + "/locks/${deviceID}/status"
+    def uri = global_apiURL + "/locks/${deviceID}"
 
-    def uri = global_apiURL + "/locks/${deviceID}/status"
 
     def headers = [
         "Accept-Version":global_HeaderAcceptVersion,
@@ -525,7 +553,7 @@ def getLockStatus(com.hubitat.app.DeviceWrapper device)
     ]
 
     def params = [ uri: uri, headers:headers]
-    LogDebug("getLockStatus-params ${params}")
+    LogDebug("getLock-params ${params}")
 
     def reJson =''
     try
@@ -543,18 +571,59 @@ def getLockStatus(com.hubitat.app.DeviceWrapper device)
     }
     catch (groovyx.net.http.HttpResponseException e) 
     {
-        LogError("getLockStatus failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        LogError("getLock failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
 
+    return reJson;
+}
 
-    def lockStatus = reJson.status
-    LogDebug("getLockStatus-status: ${lockStatus}")
+def updateLockDeviceStatus(com.hubitat.app.DeviceWrapper device) 
+{
+    LogDebug("updateLockDeviceStatus()");
+
+    def deviceID = device.getDeviceNetworkId();
+    def reJson = getLock(deviceID)
+
+
+    def lockStatus = reJson.LockStatus.status
+    LogDebug("updateLockDeviceStatus-status: ${lockStatus}")
     sendEvent(device, [name: 'lock', value: lockStatus])
 
-    def doorState = reJson.doorState
-    LogDebug("getLockStatus-doorState: ${doorState}")
-    sendEvent(device, [name: 'contact', value: doorState])
+    def doorState = reJson.LockStatus.doorState
+    LogDebug("updateLockDeviceStatus-doorState: ${doorState}")
+    if (doorState != "init")
+    {
+        sendEvent(device, [name: 'contact', value: doorState])
+    }
+
+    def batteryLevel = reJson.battery
+    LogDebug("updateLockDeviceStatus-battery: ${batteryLevel}")
+    if (batteryLevel > 0)
+    {
+        sendEvent(device, [name: 'battery', value: (batteryLevel*100).intValue()])
+    }
+
+    if (reJson.containsKey("keypad"))
+    {
+        LogDebug("Keypad Found with ID: ${reJson.keypad._id}")
+        device.updateKeypad(reJson.keypad)
+    }
+}
+
+def discoverKeypad(com.hubitat.app.DeviceWrapper device) 
+{
+    LogDebug("discoverKeypad()");
+
+    def deviceID = device.getDeviceNetworkId();
+    def reJson = getLock(deviceID)
+
+    if (reJson.containsKey("keypad"))
+    {
+        LogInfo("Keypad Found")
+        device.createChildKeypad(reJson.keypad._id, reJson.keypad.lockID)
+    }
+    updateLockDeviceStatus(device)
 }
 
 def lockDoor(com.hubitat.app.DeviceWrapper device) 
@@ -575,7 +644,7 @@ def lockDoor(com.hubitat.app.DeviceWrapper device)
     ]
 
     def params = [ uri: uri, headers:headers]
-    LogDebug("getLockStatus-params ${params}")
+    LogDebug("lockDoor-params ${params}")
 
     try
     {
@@ -597,7 +666,7 @@ def lockDoor(com.hubitat.app.DeviceWrapper device)
         LogError("lockDoor failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
-    getLockStatus(device)
+    updateLockDeviceStatus(device)
 }
 
 def unlockDoor(com.hubitat.app.DeviceWrapper device) 
@@ -618,7 +687,7 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
     ]
 
     def params = [ uri: uri, headers:headers]
-    LogDebug("getLockStatus-params ${params}")
+    LogDebug("unlockDoor-params ${params}")
 
     try
     {
@@ -640,7 +709,117 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
         LogError("unlockDoor failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
         return false;
     }
-    getLockStatus(device)
+    updateLockDeviceStatus(device)
+}
+
+
+def getLockCodes(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice) 
+{
+    def lockDeviceID = lockDevice.getDeviceNetworkId();
+
+    LogDebug("getLockCodes(deviceID=${lockDeviceID})");
+
+    def uri = global_apiURL + "/locks/${lockDeviceID}/pins"
+
+    def headers = [
+        "Accept-Version":global_HeaderAcceptVersion,
+        "x-august-api-key":global_HeaderApiKey,
+        "x-kease-api-key":global_HeaderApiKey,
+        "Content-Type":"application/json",
+        "User-Agent":global_HeaderUserAgent,
+        "x-august-access-token":state.access_token
+    ]
+
+    def params = [ uri: uri, headers:headers]
+    LogDebug("getLockCodes-params ${params}")
+
+    def reJson =''
+    try
+    {
+        httpGet(params) { response -> 
+    
+            def reCode = response.getStatus();
+            reJson = response.getData();
+            LogDebug("reCode: ${reCode}")
+            LogDebug("reJson: ${reJson}")
+            response.getHeaders().each {
+                LogDebug("reHeader: ${it}")
+            }
+        }
+    }
+    catch (groovyx.net.http.HttpResponseException e) 
+    {
+        LogError("getLockCodes failed -- ${e.getLocalizedMessage()}: ${e.response.data}")
+        return false;
+    }
+
+    def lockCodesJson = '{'
+    reJson.loaded.each { code ->
+        if (lockCodesJson.endsWith('}'))
+        {
+            lockCodesJson += ','
+        }
+        lockCodesJson += ('"' + code.slot + '":{"name":"' + code.firstName + ' ' + code.lastName + '","code":"' + code.pin + '"}')
+    }
+    lockCodesJson += '}'
+
+    // Pins are in clear text so hiding
+    //LogDebug("getLockCodes PinJson: ${lockCodesJson}")
+    sendEvent(keypadDevice, [name: 'lockCodes', value: encrypt(lockCodesJson)])
+}
+
+def deleteCode(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice, Map params)
+{
+    def codePosition = params.codeposition;
+    def lockDeviceID = lockDevice.getDeviceNetworkId();
+
+    LogDebug("deleteCode() deviceID=${lockDeviceID}; codePosition=${codePosition}")
+
+    LogError("deleteCode Not Yet Supported")
+    // As the August API is not documented and I don't have a keypad I can't add this support.
+
+    // There does seem to be a delete API (see the unexplored list at https://medium.com/@nolanbrown/august-lock-rest-apis-the-basics-7ec7f31e7874)
+    // Without more exploration I am not sure if it' "DELETE /locks/{lockID}/pins" or more likly something 
+    // something similar to PUT /locks/{lockID}/users/{userID}/pin
+}
+
+def setCode(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice, Map params)
+{
+    def pincode = params.pincode;  //might be encripted? if so run decript()
+    def codePosition = params.codeposition;
+    def name = params.name
+
+    def lockDeviceID = lockDevice.getDeviceNetworkId();
+
+    LogDebug("setCode() deviceID=${lockDeviceID}; codePosition=${codePosition}; pincode=${pincode}; name=${name}")
+
+    LogError("deleteCode Not Yet Supported")
+    // As the August API is not documented and I don't have a keypad I can't add this support.
+
+    // I suspect you first need to match the user or create one and then the pin 
+    // (see the unexplored list at https://medium.com/@nolanbrown/august-lock-rest-apis-the-basics-7ec7f31e7874)
+    // PUT /locks/adduser/{lockID}/{otherUserId}/{type} AND THEN PUT /locks/{lockID}/users/{userID}/pin
+}
+
+
+def grandChildDeviceHandler(com.hubitat.app.DeviceWrapper lockDevice, com.hubitat.app.DeviceWrapper keypadDevice, method, Map params=null)
+{    
+    LogDebug("grandChildDeviceHandler(method=${method})");
+
+
+    switch (method){
+        case 'getLockCodes':
+            getLockCodes(lockDevice, keypadDevice)
+        break
+        case 'deleteCode':
+            deleteCode(lockDevice, keypadDevice, params)
+        break
+        case 'setCode':
+            setCode(lockDevice, keypadDevice, params)
+        break
+        defaultValue:
+        LogError("No method named: ${method}")
+    }
 }
 
 
@@ -702,12 +881,9 @@ def listDiscoveredDevices() {
     section {
         paragraph "Refresh interval (how often devices are automaticaly refreshed/polled):"
 
-        input name: "refreshIntervals", type: "enum", title: "Set the refresh interval.", options: [0:"off", 60:"1 minute", 120:"2 minutes", 300:"5 minutes",600:"10 minutes",900:"15 minutes",1800:"30 minutes",3600:"60 minutes"], required: true, defaultValue: "600"
+        input name: "refreshIntervals", type: "enum", title: "Set the refresh interval.", options: [0:"off", 1:"1 minute", 2:"2 minutes", 5:"5 minutes",10:"10 minutes",15:"15 minutes",30:"30 minutes",55:"55 minutes"], required: true, defaultValue: "10", submitOnChange: true
     }
-}
-
-    //
-    
+}   
     
 
 def appButtonHandler(btn) {
@@ -734,6 +910,9 @@ def appButtonHandler(btn) {
     case 'initialize':
         initialize()
         break
+    case 'test':
+        test()
+        break
     }
 }
 
@@ -743,7 +922,7 @@ def deleteDevices()
     LogInfo("Deleting all child devices: ${children}")
     children.each {
         if (it != null) {
-            deleteChildDevice it.getDeviceNetworkId()
+            deleteChildDevice(it.getDeviceNetworkId())
         }
     } 
 }
@@ -753,4 +932,25 @@ def discoverDevices()
     LogDebug("discoverDevices()");
 
     discoverLocks()
+
+    def children = getChildDevices()
+    LogDebug("All child devices: ${children}")
+    children.each { 
+        discoverKeypad(it)
+    }
+    refreshLocks()
+}
+
+def test()
+{
+    LogDebug("test()")
+    def keypadMap = [_id:"xxxxxxxx", serialNumber:"xxxxxxxxx", lockID:"xxxxxxxxxxx", currentFirmwareVersion:"2.27.0", battery:[:], batteryLevel:"Medium", batteryRaw:"165"]
+
+    LogDebug(keypadMap)
+    def children = getChildDevices()
+    LogDebug(" All child devices: ${children}")
+    children.each { 
+        it.updateKeypad(keypadMap)
+    }
+
 }
