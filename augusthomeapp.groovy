@@ -421,7 +421,7 @@ def refreshToken()
     def runTime = new Date()
     runTime.setHours(24)
     runOnce(runTime, refreshToken)
-
+    LogInfo("Token Refreshed, next refresh in 24 hours.")
 }
 
 def discoverLocks() 
@@ -528,6 +528,7 @@ def refreshLocks()
         def cronString = ('0 */' + refreshIntervals + ' * ? * *')
         LogDebug("Scheduling Refresh cronstring: ${cronString}")
         schedule(cronString, refreshLocks)
+        LogInfo("Updated Locks, Next Update in ${refreshIntervals} min.")
     }
     else
     {
@@ -667,6 +668,7 @@ def lockDoor(com.hubitat.app.DeviceWrapper device)
         return false;
     }
     updateLockDeviceStatus(device)
+    LogInfo("Door Lock Request Compleated")
 }
 
 def unlockDoor(com.hubitat.app.DeviceWrapper device) 
@@ -710,6 +712,7 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
         return false;
     }
     updateLockDeviceStatus(device)
+    LogInfo("Door Unlock Request Compleated")
 }
 
 
@@ -910,9 +913,9 @@ def appButtonHandler(btn) {
     case 'initialize':
         initialize()
         break
-    case 'test':
+    /*case 'test':
         test()
-        break
+        break */
     }
 }
 
@@ -943,14 +946,5 @@ def discoverDevices()
 
 def test()
 {
-    LogDebug("test()")
-    def keypadMap = [_id:"xxxxxxxx", serialNumber:"xxxxxxxxx", lockID:"xxxxxxxxxxx", currentFirmwareVersion:"2.27.0", battery:[:], batteryLevel:"Medium", batteryRaw:"165"]
-
-    LogDebug(keypadMap)
-    def children = getChildDevices()
-    LogDebug(" All child devices: ${children}")
-    children.each { 
-        it.updateKeypad(keypadMap)
-    }
 
 }
