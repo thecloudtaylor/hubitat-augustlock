@@ -1,16 +1,33 @@
 {
   "packageName": "August Home",
   "author": "Taylor Brown(@thecloudtaylor)",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "minimumHEVersion": "2.2.4",
-  "dateReleased": "2020-11-28",
+  "dateReleased": "2020-12-28",
   "drivers": [
     {
-      "id": "f3be8fbc-03aa-40b7-b02e-317817fbbfcb",
-      "name": "August WiFI Lock",
+      "id": "e2490bbd-ed44-4141-a270-f3c6e6b9771c",
+      "name": "August Lock with DoorSense",
       "namespace": "thecloudtaylor",
-      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/main/augustlockdriver.groovy",
-      "required": true
+      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/v0.2.0/drivers/august_lock_doorsense.groovy",
+      "required": false,
+      "version": "0.2.0"
+    },
+    {
+      "id": "86e5b69e-8809-47a9-b106-0ef0116bf3c7",
+      "name": "August Lock",
+      "namespace": "thecloudtaylor",
+      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/v0.2.0/drivers/august_lock.groovy",
+      "required": false,
+      "version": "0.2.0"
+    },
+    {
+      "id": "030c8220-ec97-475b-9fc8-db157b6bccd0",
+      "name": "August Keypad",
+      "namespace": "thecloudtaylor",
+      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/v0.2.0/drivers/august_keypad.groovy",
+      "required": false,
+      "version": "0.2.0"
     }
   ],
   "apps": [
@@ -18,10 +35,12 @@
       "id": "3b8f568d-b664-4d6f-94cd-ec319319ed1b",
       "name": "August Home",
       "namespace": "thecloudtaylor",
-      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/main/augusthomeapp.groovy",
+      "location": "https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/v0.2.0/augusthomeapp.groovy",
       "required": true,
       "oauth": false,
-      "primary": false
+      "primary": false,
+      "version": "0.2.0"
     }
-  ]
+  ],
+  "releaseNotes": "Fixes and Features... Features: battery level, basic keypad functionality (get codes works but not delete/add)."
 }
