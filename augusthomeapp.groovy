@@ -170,6 +170,9 @@ def initialize()
     unschedule()
     refreshToken()
     refreshLocks()
+    def cronString = ('0 */' + refreshIntervals + ' * ? * *')
+    LogDebug("Scheduling Refresh cronstring: ${cronString}")
+    schedule(cronString, refreshLocks, [overwrite:true])
 }
 
 def updated() 
@@ -525,9 +528,6 @@ def refreshLocks()
 
     if (refreshIntervals != "0" && refreshIntervals != null)
     {
-        def cronString = ('0 */' + refreshIntervals + ' * ? * *')
-        LogDebug("Scheduling Refresh cronstring: ${cronString}")
-        schedule(cronString, refreshLocks)
         LogInfo("Updated Locks, Next Update in ${refreshIntervals} min.")
     }
     else
