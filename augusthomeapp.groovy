@@ -175,7 +175,7 @@ def initialize()
     {
         def cronString = ('0 */' + refreshIntervals + ' * ? * *')
         LogDebug("Scheduling Refresh cronstring: ${cronString}")
-        schedule(cronString, RefreshAllDevices)
+        schedule(cronString, refreshLocks)
     }
     else
     {
