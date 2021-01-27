@@ -109,5 +109,5 @@ eval $gitCmd
 
 gitCmd="git push"
 echo "Running: $gitCmd"
-#eval $gitCmd
+eval $gitCmd
 [ $? -eq 0 ]  || exit 1
