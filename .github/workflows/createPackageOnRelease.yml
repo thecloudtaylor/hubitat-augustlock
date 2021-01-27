@@ -1,0 +1,75 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CREATEPACKAGEONRELEASE
+
+# Controls when the action will run. 
+on:
+  release:
+    types: [published]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      manualrunreleaseTag:
+        description: 'Release Tag'
+        required: true
+
+jobs:
+  release:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Init_Log
+        run: echo CREATEPACKAGEONRELEASE Started!
+
+      # Runs a set of commands using the runners shell
+      - name: Context_Log
+        run: |
+          echo "Release: $GITHUB_REF"
+
+      # Pulls the secrete to access the package repo and checks it out
+      - name: Checkout secrets
+        uses: actions/checkout@v2
+ 
+      - name: Decrypt secrets
+        env:
+          ENCRYPTION_KEY: ${{ secrets.PACKAGE_REPO_KEY }}
+        run: |
+          ./.github/workflows/secrets/decrypt_secret.sh
+ 
+      - name: Setup SSH agent
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+ 
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          chmod 0600 $HOME/secrets/id_rsa
+          ssh-add $HOME/secrets/id_rsa
+ 
+      - name: Checkout
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          cd ..
+          git clone git@github.com:thecloudtaylor/hubitat-packages.git
+ 
+      - name: Update Package JSON with Hpm
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ./.github/workflows/runHpmForRelease.sh --githubRef $GITHUB_REF --releaseTag ${{ github.event.inputs.manualrunreleaseTag }}
+
+      - name: Cleanup
+        if: always()
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh-add -D
+          rm -Rf *

@@ -1,0 +1,2 @@
+Get new versions from https://github.com/dcmeglio/hubitat-packagemanagertools/releases
+hpm is a symlink to the latest version (ln -s <realfile> hpm)
