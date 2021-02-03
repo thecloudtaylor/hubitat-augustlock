@@ -21,7 +21,9 @@ echo "Param releaseTag: $releaseTag"
 
 if [[ -z "${releaseTag}" ]]; then
   version=$(echo $githubRef | grep -Eo [0-9].[0-9].[0-9]);
-  baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/$githubRef";
+  $releaseTag = $githubRef" | sed 's|refs/tags/||';
+  echo "releaseTag: $releaseTag"
+  baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/$releaseTag";
 else
   version=$(echo $releaseTag | grep -Eo [0-9].[0-9].[0-9]);
   baseCodePath="https://raw.githubusercontent.com/thecloudtaylor/hubitat-augustlock/$releaseTag";
