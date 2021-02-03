@@ -111,7 +111,7 @@ def getLoginOptions()
 {
  section 
     {
-        input name: "loginMethod", type: "enum", title: "Authentication Method", options: ["email", "phone"], required: true, defaultValue: "phone"
+        input name: "loginMethod", type: "enum", title: "Authentication Method", options: ["email", "phone"], required: true, defaultValue: "phone", submitOnChange: true
         input name: "username", type: "text", title: "Username(email or phone i.e +1(123)456-7890", description: "August Username", required: true
         input name: "password", type: "password", title: "Password", description: "August Password", required: true   
         input 'login', 'button', title: 'Login', submitOnChange: true
