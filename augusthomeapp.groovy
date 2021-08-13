@@ -676,7 +676,7 @@ def lockDoor(com.hubitat.app.DeviceWrapper device)
         return false;
     }
     updateLockDeviceStatus(device)
-    LogInfo("Door Lock Request Compleated")
+    LogInfo("Door Lock Request Completed")
 }
 
 def unlockDoor(com.hubitat.app.DeviceWrapper device) 
@@ -720,7 +720,7 @@ def unlockDoor(com.hubitat.app.DeviceWrapper device)
         return false;
     }
     updateLockDeviceStatus(device)
-    LogInfo("Door Unlock Request Compleated")
+    LogInfo("Door Unlock Request Completed")
 }
 
 
